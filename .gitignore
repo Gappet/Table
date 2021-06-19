@@ -1,0 +1,9 @@
+/Debug
+/out
+/dist
+/antlr4_runtime
+/.vs
+*.vcxproj
+*.filters
+*.user
+antlr-4.9-complete.*
