@@ -18,6 +18,9 @@ void Sheet::SetCell(Position pos, std::string text) {
         throw InvalidPositionException("Invalid position"s);
     }
 
+    //std::shared_ptr<Cell> tmp = std::make_shared<Cell>(this, pos);
+    //tmp->Set(text);
+
     if (fields_.size() <= static_cast<size_t>(pos.row)) {
         fields_.resize(pos.row * 2 + 1);
     }
@@ -25,16 +28,19 @@ void Sheet::SetCell(Position pos, std::string text) {
     if (fields_[pos.row].size() <= static_cast<size_t>(pos.col)) {
         fields_.at(pos.row).resize(pos.col * 2 + 1);
     }
-    fields_[pos.row][pos.col] = std::make_shared<Cell>();
+
+    if (fields_[pos.row][pos.col] == nullptr) {
+        fields_[pos.row][pos.col] = std::make_shared<Cell>(this, pos);
+    }
     fields_[pos.row][pos.col].get()->Set(text);
 
-    if (max_col_ <= pos.col) {
-        max_col_ = pos.col + 1;
-    }
+    //if (max_col_ <= pos.col) {
+    //    max_col_ = pos.col + 1;
+    //}
 
-    if (max_row_ <= pos.row) {
-        max_row_ = pos.row + 1;
-    }
+    //if (max_row_ <= pos.row) {
+    //    max_row_ = pos.row + 1;
+    //}
 }
 
 const CellInterface* Sheet::GetCell(Position pos) const {
@@ -120,6 +126,7 @@ void Sheet::ClearCell(Position pos) {
     max_col_ = new_max_cols;
     max_row_ = new_max_rows;
 }
+
 
 Size Sheet::GetPrintableSize() const {
     return { static_cast<int>(max_row_), static_cast<int>(max_col_) };
@@ -219,6 +226,68 @@ void Sheet::PrintTexts(std::ostream& output) const {
         }
     }
     output << '\n';
+}
+
+
+void Sheet::IsCicled(Position& pos, std::vector<Position>& poses) {
+    if (std::find(poses.begin(), poses.end(), pos) !=poses.end()) {
+        throw CircularDependencyException(pos.ToString() + " position is circled");
+    }
+
+    for (const Position& ps : poses) {
+        if (used_cells_.count(ps)) {
+            if (used_cells_[ps].find(pos) != used_cells_[ps].end()) {
+                throw CircularDependencyException("");
+            }
+        }
+    }
+
+    std::set<Position> buffer{ poses.begin(), poses.end() };
+    for (const Position& ps : poses) {
+        if (used_cells_.count(ps)) {
+            std::cout << 2222 << std::endl;
+            IsCicled(pos, used_cells_[ps], buffer);
+        }        
+    }
+    
+
+}
+
+void Sheet::IsCicled(Position& pos, std::set<Position>& poses, std::set<Position>& buffer) {
+    if (poses.find(pos) != poses.end()) {
+        std::cout << 11111111 << std::endl;
+        throw CircularDependencyException(pos.ToString() + " use in formula");
+    }
+        
+
+    for (const Position& ps : poses) {
+        if (buffer.find(ps) == buffer.end()) {
+            if (used_cells_.count(ps)) {
+                if (used_cells_.at(ps).find(pos) != used_cells_.at(ps).end()) {
+                    throw CircularDependencyException("11111");
+                }
+            }
+            buffer.insert(ps);
+        }
+    }
+
+    for (const Position& ps : poses) {
+        if (used_cells_.count(pos)) {
+            IsCicled(pos, used_cells_.at(ps), buffer);
+        }
+    }
+
+}
+
+void Sheet::IncreaseSize(Position& pos) {
+    if (max_col_ <= pos.col) {
+        max_col_ = pos.col + 1;
+    }
+
+    if (max_row_ <= pos.row) {
+        max_row_ = pos.row + 1;
+    }
+
 }
 
 std::unique_ptr<SheetInterface> CreateSheet() {

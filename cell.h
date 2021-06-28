@@ -3,6 +3,8 @@
 #include "common.h"
 #include "formula.h"
 #include <variant>
+#include <optional>
+#include <iostream>
 
 using namespace std::literals;
 
@@ -10,8 +12,6 @@ using namespace std::literals;
 class Impl {
 public:
     Impl(std::string value) : value_(value) {}
-
-    void Set(std::string& value);
 
     std::string& GetString() {
         return value_;
@@ -63,31 +63,32 @@ public:
 class FormulaImpl : public Impl {
 public:
 
-    FormulaImpl(std::string value) : Impl(value), formula_(ParseFormula(value.substr(1))) {
-        /*formula_ = ParseFormula(value);*/
-    }
+    FormulaImpl(std::string value, SheetInterface* sheet) : Impl(value), formula_(ParseFormula(value.substr(1))), sheet_(sheet) {}
 
     std::string GetText() override {
-        //std::cout << formula_.get()->GetExpression() << std::endl;
         return "="s + formula_.get()->GetExpression();
     }
 
     CellInterface::Value GetValue() override {
-        FormulaInterface::Value out = formula_.get()->Evaluate();
+        FormulaInterface::Value out = formula_->Evaluate(*sheet_);
         if (std::get_if<double>(&out)) {
             return std::get<double>(out);
         }
         return std::get<FormulaError>(out);
     }
 
-private:
+    std::vector<Position> GetReferencedCells() {
+        return formula_->GetReferencedCells();
+    }
 
+private:
     std::unique_ptr<FormulaInterface> formula_;
+    SheetInterface* sheet_;
 };
 
 class Cell : public CellInterface {
 public:
-    Cell();
+    Cell(SheetInterface* sheet, Position position);
     ~Cell();
 
     void Set(std::string text);
@@ -95,13 +96,28 @@ public:
 
     Value GetValue() const override;
     std::string GetText() const override;
+    std::vector<Position> GetReferencedCells() const override;
+
+    bool IsValid() const;
+
+    void  ClearCache();
+
+    bool IsFormula() const;
+
+    bool IsCreate();
 
 
-    //РјРѕР¶РµС‚Рµ РІРѕСЃРїРѕР»СЊР·РѕРІР°С‚СЊСЃСЏ РЅР°С€РµР№ РїРѕРґСЃРєР°Р·РєРѕР№, РЅРѕ СЌС‚Рѕ РЅРµРѕР±СЏР·Р°С‚РµР»СЊРЅРѕ.
+    //можете воспользоваться нашей подсказкой, но это необязательно.
 
 
 private:
 
+
+    SheetInterface* sheet_;
+    Position position_;
     std::shared_ptr<Impl> impl_ = nullptr;
+    bool is_formula_ = false;
+    std::optional<Cell::Value> cash_ = std::nullopt;
+    //std::optional<double> cash_;
 
 };
