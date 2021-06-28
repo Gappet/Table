@@ -46,7 +46,7 @@ public:
 
     inline static const std::string Ref_ = "#REF!"s;
     inline static const std::string Value_ = "#VALUE!"s;
-    inline static const std::string Div0_ = "#DIV0!"s;
+    inline static const std::string Div0_ = "#DIV/0!"s;
     FormulaError(Category category) : category_(category) {}
 
     Category GetCategory() const {
@@ -66,7 +66,7 @@ public:
         if (category_ == Category::Ref) {
             return Ref_;
 
-        }       
+        }
 
         return Value_;
     }

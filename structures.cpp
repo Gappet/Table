@@ -36,7 +36,6 @@ std::string Position::ToString() const {
     }
 
     result += std::to_string(row + 1);
-
     return result;
 }
 

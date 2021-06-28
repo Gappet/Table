@@ -21,10 +21,7 @@ public:
 
     virtual std::string GetText() = 0;
 
-
     virtual ~Impl() = default;
-
-
 
     std::string value_;
 };
@@ -106,18 +103,10 @@ public:
 
     bool IsCreate();
 
-
-    //можете воспользоваться нашей подсказкой, но это необязательно.
-
-
 private:
-
-
     SheetInterface* sheet_;
     Position position_;
     std::shared_ptr<Impl> impl_ = nullptr;
-    bool is_formula_ = false;
     std::optional<Cell::Value> cash_ = std::nullopt;
-    //std::optional<double> cash_;
 
 };

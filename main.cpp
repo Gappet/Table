@@ -24,6 +24,9 @@ inline std::ostream& operator<<(std::ostream& output, const CellInterface::Value
 
 namespace {
 
+
+
+
     void TestEmpty() {
         auto sheet = CreateSheet();
         ASSERT_EQUAL(sheet->GetPrintableSize(), (Size{ 0, 0 }));
@@ -65,7 +68,6 @@ namespace {
         checkCell("A3"_pos, "Meow");
 
         const SheetInterface& constSheet = *sheet;
-        //std::cout << sheet->GetPrintableSize().cols << " " << sheet.get()->GetPrintableSize().rows << std::endl;
         ASSERT_EQUAL(constSheet.GetCell("B2"_pos)->GetText(), "Purr");
 
         sheet->SetCell("A3"_pos, "'=escaped");
@@ -98,7 +100,7 @@ namespace {
 
         std::ostringstream values;
         sheet->PrintValues(values);
-        ASSERT_EQUAL(values.str(), "#DIV0!\t\nmeow\t3\n");
+        ASSERT_EQUAL(values.str(), "#DIV/0!\t\nmeow\t3\n");
 
         sheet->ClearCell("B2"_pos);
         ASSERT_EQUAL(sheet->GetPrintableSize(), (Size{ 2, 1 }));
@@ -136,18 +138,34 @@ namespace {
 
     void MyTestIII() {
         auto sheet = CreateSheet();
-        sheet->SetCell("A1"_pos, "meow");
-        sheet->SetCell("A2"_pos, "meow");
-        //sheet->SetCell("B1"_pos, "meow");
-        //sheet->SetCell("B2"_pos, "meow");
+        sheet->SetCell("A1"_pos, "meowI");
         std::cout << sheet->GetPrintableSize().cols << " " << sheet->GetPrintableSize().rows << std::endl;
-        //std::ostringstream values;
-        //sheet->PrintValues(values);
-        //std::cout << values.str() << std::endl;
-        sheet->ClearCell("A2"_pos);
-        //sheet->ClearCell("A2"_pos);
-        //sheet->ClearCell("B1"_pos);
-        //sheet->ClearCell("B2"_pos);
+        sheet->SetCell("A2"_pos, "meowII");
+        std::cout << sheet->GetPrintableSize().cols << " " << sheet->GetPrintableSize().rows << std::endl;
+        sheet->SetCell("B1"_pos, "meowIII");
+        std::cout << sheet->GetPrintableSize().cols << " " << sheet->GetPrintableSize().rows << std::endl;
+        sheet->SetCell("B2"_pos, "meowV");
+        std::cout << sheet->GetPrintableSize().cols << " " << sheet->GetPrintableSize().rows << std::endl;
+        std::ostringstream values;
+        sheet->PrintValues(values);
+        std::cout << values.str() << std::endl;
+        sheet->ClearCell("A1"_pos);
+        std::cout << sheet->GetPrintableSize().cols << " " << sheet->GetPrintableSize().rows << std::endl;
+        std::ostringstream valuesI;
+        sheet->PrintValues(valuesI);
+        std::cout << valuesI.str() << std::endl;
+        sheet->ClearCell("B2"_pos);
+        std::cout << sheet->GetPrintableSize().cols << " " << sheet->GetPrintableSize().rows << std::endl;
+        std::ostringstream valuesII;
+        sheet->PrintValues(valuesII);
+        std::cout << valuesII.str() << std::endl;
+        sheet->ClearCell("A1"_pos);
+        std::cout << sheet->GetPrintableSize().cols << " " << sheet->GetPrintableSize().rows << std::endl;
+        std::ostringstream valuesIII;
+        sheet->PrintValues(valuesIII);
+        std::cout << valuesIII.str() << std::endl;
+        sheet->ClearCell("B1"_pos);
+        std::cout << sheet->GetPrintableSize().cols << " " << sheet->GetPrintableSize().rows << std::endl;
         std::cout << "/////////////" << std::endl;
         std::ostringstream values2;
         std::cout << sheet->GetPrintableSize().cols << " " << sheet->GetPrintableSize().rows << std::endl;
@@ -228,6 +246,28 @@ namespace {
 
     }
 
+    void MyTestVIV() {
+        auto sheet = CreateSheet();
+        try {
+            sheet->SetCell("A2"_pos, "=A1+*");
+        }
+        catch (FormulaError& a) {
+            std::cout << 1 << std::endl;
+        }
+        catch (CircularDependencyException& a) {
+            std::cout << 3 << std::endl;
+
+        }
+        catch(InvalidPositionException& a) {
+            std::cout << 2 << std::endl;
+        }
+        catch (FormulaException& e) {
+            std::cout << 2333 << std::endl;
+        }
+        
+
+    }
+
 
 
 
@@ -250,7 +290,8 @@ int main() {
     //RUN_TEST(tr, MyTestV);
     //RUN_TEST(tr, MyTestVI);
     //RUN_TEST(tr, MyTestVII);
-    RUN_TEST(tr, MyTestVIII);
+    //RUN_TEST(tr, MyTestVIII);
+    RUN_TEST(tr, MyTestVIV);
 
     std::cout << "all done" << std::endl;
     return 0;

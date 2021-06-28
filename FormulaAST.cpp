@@ -249,7 +249,7 @@ namespace ASTImpl {
                 }
                 catch (InvalidPositionException& exp) {
                     throw FormulaError(FormulaError::Category::Ref);
-                }               
+                }
 
                 //std::cout << std::get<double>(out) << " value cell" <<  std::endl;
                 return std::get<double>(out);
@@ -419,7 +419,12 @@ FormulaAST ParseFormulaAST(std::istream& in) {
 
 FormulaAST ParseFormulaAST(const std::string& in_str) {
     std::istringstream in(in_str);
-    return ParseFormulaAST(in);
+    try {
+        return ParseFormulaAST(in);
+    }
+    catch (const std::exception& exc) {
+        std::throw_with_nested(FormulaException(exc.what()));
+    }
 }
 
 void FormulaAST::PrintCells(std::ostream& out) const {

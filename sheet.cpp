@@ -18,8 +18,18 @@ void Sheet::SetCell(Position pos, std::string text) {
         throw InvalidPositionException("Invalid position"s);
     }
 
-    //std::shared_ptr<Cell> tmp = std::make_shared<Cell>(this, pos);
-    //tmp->Set(text);
+    std::shared_ptr<Cell> tmp = std::make_shared<Cell>(this, pos);
+    tmp->Set(text);
+
+    if (!tmp->IsCreate()) {
+        return;
+    }
+
+    if (tmp->IsFormula()) {
+        auto poses = tmp->GetReferencedCells();
+        IsCicled(pos, poses);
+    }
+
 
     if (fields_.size() <= static_cast<size_t>(pos.row)) {
         fields_.resize(pos.row * 2 + 1);
@@ -32,15 +42,11 @@ void Sheet::SetCell(Position pos, std::string text) {
     if (fields_[pos.row][pos.col] == nullptr) {
         fields_[pos.row][pos.col] = std::make_shared<Cell>(this, pos);
     }
-    fields_[pos.row][pos.col].get()->Set(text);
 
-    //if (max_col_ <= pos.col) {
-    //    max_col_ = pos.col + 1;
-    //}
-
-    //if (max_row_ <= pos.row) {
-    //    max_row_ = pos.row + 1;
-    //}
+    fields_[pos.row][pos.col] = tmp;
+    auto poses = fields_[pos.row][pos.col]->GetReferencedCells();
+    AddToGraph(pos, poses);
+    IncreaseSize(pos);
 }
 
 const CellInterface* Sheet::GetCell(Position pos) const {
@@ -125,6 +131,10 @@ void Sheet::ClearCell(Position pos) {
 
     max_col_ = new_max_cols;
     max_row_ = new_max_rows;
+
+    for (const Position& ps : dependent_cells_[pos]) {
+        dynamic_cast<Cell*>(GetCell(ps))->ClearCache();
+    }
 }
 
 
@@ -230,7 +240,7 @@ void Sheet::PrintTexts(std::ostream& output) const {
 
 
 void Sheet::IsCicled(Position& pos, std::vector<Position>& poses) {
-    if (std::find(poses.begin(), poses.end(), pos) !=poses.end()) {
+    if (std::find(poses.begin(), poses.end(), pos) != poses.end()) {
         throw CircularDependencyException(pos.ToString() + " position is circled");
     }
 
@@ -245,20 +255,16 @@ void Sheet::IsCicled(Position& pos, std::vector<Position>& poses) {
     std::set<Position> buffer{ poses.begin(), poses.end() };
     for (const Position& ps : poses) {
         if (used_cells_.count(ps)) {
-            std::cout << 2222 << std::endl;
             IsCicled(pos, used_cells_[ps], buffer);
-        }        
+        }
     }
-    
-
 }
 
 void Sheet::IsCicled(Position& pos, std::set<Position>& poses, std::set<Position>& buffer) {
     if (poses.find(pos) != poses.end()) {
-        std::cout << 11111111 << std::endl;
         throw CircularDependencyException(pos.ToString() + " use in formula");
     }
-        
+
 
     for (const Position& ps : poses) {
         if (buffer.find(ps) == buffer.end()) {
@@ -288,6 +294,24 @@ void Sheet::IncreaseSize(Position& pos) {
         max_row_ = pos.row + 1;
     }
 
+}
+
+void Sheet::AddToGraph(const Position& pos, std::vector<Position>& poses) {
+    for (const Position& ps : used_cells_[pos]) {
+        dependent_cells_[ps].extract(pos);
+    }
+
+    used_cells_[pos] = { poses.begin(), poses.end() };
+
+    for (const Position& ps : poses) {
+        dependent_cells_[ps].insert(pos);
+    }
+
+    for (const Position& ps : dependent_cells_[pos]) {
+        dynamic_cast<Cell*>(GetCell(ps))->ClearCache();
+    }
+
+    dynamic_cast<Cell*>(GetCell(pos))->ClearCache();
 }
 
 std::unique_ptr<SheetInterface> CreateSheet() {
