@@ -247,7 +247,7 @@ void Sheet::IsCicled(Position& pos, std::vector<Position>& poses) {
     for (const Position& ps : poses) {
         if (used_cells_.count(ps)) {
             if (used_cells_[ps].find(pos) != used_cells_[ps].end()) {
-                throw CircularDependencyException("");
+                throw CircularDependencyException("");	/// желательно добавит сообщение
             }
         }
     }
@@ -270,7 +270,7 @@ void Sheet::IsCicled(Position& pos, std::set<Position>& poses, std::set<Position
         if (buffer.find(ps) == buffer.end()) {
             if (used_cells_.count(ps)) {
                 if (used_cells_.at(ps).find(pos) != used_cells_.at(ps).end()) {
-                    throw CircularDependencyException("11111");
+                    throw CircularDependencyException("11111");	/// бессысленное сообщение, сообщения должны помагать разобраться с проблемой
                 }
             }
             buffer.insert(ps);
