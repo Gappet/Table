@@ -108,5 +108,4 @@ private:
     Position position_;
     std::shared_ptr<Impl> impl_ = nullptr;
     std::optional<Cell::Value> cash_ = std::nullopt;
-
 };
